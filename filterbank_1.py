@@ -3,6 +3,7 @@
 import sys
 from aubio import onset, source
 from numpy import hstack, zeros
+import comb_filterbank
 
 win_s = 512                 # fft size
 hop_s = win_s // 2          # hop size
