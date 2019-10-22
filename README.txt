@@ -19,4 +19,4 @@ excerpt-snare.onsets
 
 excerpt-bass-kick.sv	Sonic Visualizer project with bass and kick
 
-separate_songs.sh 
+separate_songs.rb

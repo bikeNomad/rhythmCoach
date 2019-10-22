@@ -2,3 +2,9 @@
 *.o
 *.a
 *.d
+*.pyc
+/audio
+/beatalgo
+/python
+*.py
+/aubio
