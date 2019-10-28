@@ -1,3 +1,6 @@
 [submodule "aubio"]
 	path = aubio
 	url = ./aubio
+[submodule "plplot"]
+	path = plplot
+	url = ./plplot/
