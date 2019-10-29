@@ -9,10 +9,10 @@
 template<class ItemType, unsigned N>
 class DelayLine {
  public:
-  DelayLine() : items_(), head_(0), emptyItem_(static_cast<ItemType>(0)) { items_.fill(emptyItem_); }
+  DelayLine() : items_(), head_(0) { clear(); }
 
   ItemType const & at_delay(unsigned delay) const {
-    if (delay >= N) { return emptyItem_; }
+    if (delay >= N) { return empty_item_; }
     int index = head_ - delay - 1;
     if (index < 0) {
       index += N;
@@ -27,8 +27,13 @@ class DelayLine {
     }
   }
 
+  void clear() {
+    head_ = 0;
+    items_.fill(empty_item_);
+  }
+
  protected:
   std::array<ItemType, N> items_;
   unsigned head_;
-  constexpr ItemType emptyItem_;
+  static constexpr ItemType empty_item_ = {0};
 };
