@@ -4,23 +4,27 @@ extern "C" {
 #include <aubio.h>
 #include "utils_tests.h"
 }
+#include <iostream>
 
 #include <cassert>
 
 class AubioProcessor {
  public:
-  AubioProcessor(char const *source_path, uint_t samplerate_ = 0,
-                 uint_t hop_size_ = 256)
-      : samplerate(samplerate_),
-        win_s(1024),
-        hop_size(hop_size_),
-        n_frames(0) {
-    source = new_aubio_source(source_path, samplerate, hop_size);
-    assert(source != nullptr);
-    if (!samplerate) {
-      samplerate = aubio_source_get_samplerate(source);
+  AubioProcessor(char const *source_path, uint_t samplerate = 0,
+                 uint_t hop_size = 256)
+      : samplerate_(samplerate),
+        win_s_(1024),
+        hop_size_(hop_size),
+        n_frames_(0) {
+    source = new_aubio_source(source_path, samplerate_, hop_size_);
+    if (!source) {
+      std::cerr << "Can't open " << source_path << "\n";
     }
-    in = new_fvec(hop_size);
+    if (!samplerate_) {
+      samplerate_ = aubio_source_get_samplerate(source);
+    }
+    std::cerr << "Sample rate: " << samplerate_ << "\n";
+    in = new_fvec(hop_size_);
     assert(in != nullptr);
   }
 
@@ -33,16 +37,16 @@ class AubioProcessor {
   bool read_frames() {
     uint_t read;
     aubio_source_do(source, in, &read);
-    n_frames += read;
-    return read == hop_size;
+    n_frames_ += read;
+    return read == hop_size_;
   }
 
  protected:
-  uint_t samplerate;  // sample rate; 0 for automatic
-  uint_t win_s;  // window size
-  uint_t hop_size;
+  uint_t samplerate_;  // sample rate; 0 for automatic
+  uint_t win_s_;  // window size
+  uint_t hop_size_;
   aubio_source_t *source;
-  uint_t n_frames;
+  uint_t n_frames_;
   fvec_t *in;  // audio input buffer
 };
 
@@ -53,10 +57,12 @@ class AubioOnsetDetector : public AubioProcessor {
    * energy, hfc, complexdomain, complex, phase, wphase,
    * mkl, kl, specflux, specdiff, old_default
    */
-  AubioOnsetDetector(char const *source_path, char const *method = "default",
-                     uint_t samplerate_ = 0, uint_t hop_size_ = 256)
-      : AubioProcessor(source_path, samplerate_, hop_size_) {
-    o = new_aubio_onset(method, win_s, hop_size, samplerate);
+  AubioOnsetDetector(char const *source_path,
+                     uint_t samplerate = 0,
+                     uint_t hop_size = 256,
+                     char const *method = "default")
+      : AubioProcessor(source_path, samplerate, hop_size) {
+    o = new_aubio_onset(method, win_s_, hop_size_, samplerate_);
     out = new_fvec(2);
     assert(out != nullptr);
   }
@@ -83,10 +89,15 @@ class AubioOnsetDetector : public AubioProcessor {
   smpl_t last_s() const {
     return aubio_onset_get_last_s(o);
   }
-  uint_t last_frame() const {
+
+  /** answer the location of the last onset in samples */
+  uint_t last_sample() const {
     return aubio_onset_get_last(o);
   }
 
+  /** answer the current delay in samples */
+  uint_t delay() const { return aubio_onset_get_delay(o); }
+ 
   void set_threshold(smpl_t threshold) {
     aubio_onset_set_threshold(o, threshold);
   }

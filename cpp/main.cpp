@@ -12,7 +12,7 @@ int main(int argc, char const *argv[]) {
     std::cerr << "usage: " << argv[0] << " filename\n";
     exit(1);
   }
-  AubioOnsetDetector onsetDetector(argv[1]);
+  AubioOnsetDetector onsetDetector(argv[1], 0, 256, "specdiff");
   while (onsetDetector.process_frames()) {
     if (onsetDetector.is_onset()) {
       printf("%.6f\n", onsetDetector.last_s());

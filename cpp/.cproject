@@ -7,7 +7,15 @@
             			
             <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.macosx.base.1263544270" moduleId="org.eclipse.cdt.core.settings" name="Default">
                 				
-                <externalSettings/>
+                <externalSettings>
+                    					
+                    <externalSetting>
+                        						
+                        <entry flags="RESOLVED" kind="macro" name="HAVE_SNDFILE" value="1"/>
+                        					
+                    </externalSetting>
+                    				
+                </externalSettings>
                 				
                 <extensions>
                     					
@@ -15,11 +23,7 @@
                     					
                     <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
                     					
-                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
                     <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
                     					
                     <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
                     				
@@ -33,25 +37,23 @@
                     					
                     <folderInfo id="cdt.managedbuild.toolchain.gnu.macosx.base.1263544270.197735905" name="/" resourcePath="">
                         						
-                        <toolChain id="cdt.managedbuild.toolchain.gnu.macosx.base.1897570596" name="MacOSX GCC" superClass="cdt.managedbuild.toolchain.gnu.macosx.base">
+                        <toolChain id="cdt.managedbuild.toolchain.gnu.macosx.base.912340957" name="MacOSX GCC" superClass="cdt.managedbuild.toolchain.gnu.macosx.base">
                             							
-                            <targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.MachO64" id="cdt.managedbuild.target.gnu.platform.macosx.base.1032934551" name="Debug Platform" osList="macosx" superClass="cdt.managedbuild.target.gnu.platform.macosx.base"/>
+                            <targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.MachO64" id="cdt.managedbuild.target.gnu.platform.macosx.base.674345410" name="Debug Platform" osList="macosx" superClass="cdt.managedbuild.target.gnu.platform.macosx.base"/>
                             							
-                            <builder buildPath="${workspace_loc:/rhythmCoach}/Default" id="cdt.managedbuild.target.gnu.builder.macosx.base.1669077047" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.macosx.base"/>
+                            <builder buildPath="${workspace_loc:/rhythmCoach}/Default" id="org.eclipse.cdt.build.core.internal.builder.544644353" keepEnvironmentInBuildfile="false" name="CDT Internal Builder" superClass="org.eclipse.cdt.build.core.internal.builder"/>
                             							
-                            <tool id="cdt.managedbuild.tool.macosx.c.linker.macosx.base.972163807" name="MacOS X C Linker" superClass="cdt.managedbuild.tool.macosx.c.linker.macosx.base"/>
+                            <tool id="cdt.managedbuild.tool.macosx.c.linker.macosx.base.1454953561" name="MacOS X C Linker" superClass="cdt.managedbuild.tool.macosx.c.linker.macosx.base"/>
                             							
-                            <tool id="cdt.managedbuild.tool.macosx.cpp.linker.macosx.base.440764986" name="MacOS X C++ Linker" superClass="cdt.managedbuild.tool.macosx.cpp.linker.macosx.base">
+                            <tool id="cdt.managedbuild.tool.macosx.cpp.linker.macosx.base.885834194" name="MacOS X C++ Linker" superClass="cdt.managedbuild.tool.macosx.cpp.linker.macosx.base">
                                 								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="macosx.cpp.link.option.libs.1103600967" name="Libraries (-l)" superClass="macosx.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="macosx.cpp.link.option.libs.750760620" name="Libraries (-l)" superClass="macosx.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
                                     									
-                                    <listOptionValue builtIn="false" value="aubio"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="stdc++"/>
+                                    <listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="aubio"/>
                                     								
                                 </option>
                                 								
-                                <inputType id="cdt.managedbuild.tool.macosx.cpp.linker.input.749163017" superClass="cdt.managedbuild.tool.macosx.cpp.linker.input">
+                                <inputType id="cdt.managedbuild.tool.macosx.cpp.linker.input.699480286" superClass="cdt.managedbuild.tool.macosx.cpp.linker.input">
                                     									
                                     <additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
                                     									
@@ -61,45 +63,73 @@
                                 							
                             </tool>
                             							
-                            <tool id="cdt.managedbuild.tool.gnu.assembler.macosx.base.1019835769" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.macosx.base">
+                            <tool id="cdt.managedbuild.tool.gnu.assembler.macosx.base.2028368248" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.macosx.base">
                                 								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.both.asm.option.include.paths.1311679785" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/aubio/src}&quot;"/>
-                                    								
-                                </option>
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.assembler.input.1269145151" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+                                <inputType id="cdt.managedbuild.tool.gnu.assembler.input.574150481" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
                                 							
                             </tool>
                             							
-                            <tool id="cdt.managedbuild.tool.gnu.archiver.macosx.base.700517479" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.macosx.base"/>
+                            <tool id="cdt.managedbuild.tool.gnu.archiver.macosx.base.908783927" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.macosx.base"/>
                             							
-                            <tool id="cdt.managedbuild.tool.gnu.cpp.compiler.macosx.base.1556210800" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.macosx.base">
+                            <tool id="cdt.managedbuild.tool.gnu.cpp.compiler.macosx.base.1561134912" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.macosx.base">
                                 								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.108902203" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.466443151" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
                                     									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/aubio/src}&quot;"/>
+                                    <listOptionValue builtIn="false" value="/usr/local/include/aubio"/>
                                     								
                                 </option>
                                 								
-                                <option id="gnu.cpp.compiler.option.dialect.std.233425588" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.c++1y" valueType="enumerated"/>
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.1049555190" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
+                                    									
+                                    <listOptionValue builtIn="false" value="HAVE_STDLIB_H=1"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="HAVE_SOURCE_APPLE_AUDIO=1"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="HAVE_WAVREAD=1"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="HAVE_WAVWRITE=1"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="HAVE_SNDFILE=1"/>
+                                    								
+                                </option>
                                 								
-                                <inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.481682986" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+                                <option id="gnu.cpp.compiler.option.dialect.std.1584996544" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.c++1y" valueType="enumerated"/>
+                                								
+                                <option id="gnu.cpp.compiler.option.optimization.level.1399992206" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
+                                								
+                                <option id="gnu.cpp.compiler.option.optimization.flags.898793518" name="Other optimization flags" superClass="gnu.cpp.compiler.option.optimization.flags" useByScannerDiscovery="false" value="-Og" valueType="string"/>
+                                								
+                                <option id="gnu.cpp.compiler.option.warnings.extrawarn.1338630352" name="Extra warnings (-Wextra)" superClass="gnu.cpp.compiler.option.warnings.extrawarn" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1418209345" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
                                 							
                             </tool>
                             							
-                            <tool id="cdt.managedbuild.tool.gnu.c.compiler.macosx.base.797001662" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.macosx.base">
+                            <tool id="cdt.managedbuild.tool.gnu.c.compiler.macosx.base.527003395" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.macosx.base">
                                 								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.401264633" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.984997136" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
                                     									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/aubio/src}&quot;"/>
+                                    <listOptionValue builtIn="false" value="/usr/local/include/aubio"/>
                                     								
                                 </option>
                                 								
-                                <option id="gnu.c.compiler.option.dialect.std.1911076497" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.c11" valueType="enumerated"/>
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.1038275234" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+                                    									
+                                    <listOptionValue builtIn="false" value="HAVE_SNDFILE=1"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="HAVE_SOURCE_APPLE_AUDIO=1"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="HAVE_WAVREAD=1"/>
+                                    								
+                                </option>
                                 								
-                                <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1087990014" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+                                <option id="gnu.c.compiler.option.dialect.std.1833272523" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.c11" valueType="enumerated"/>
+                                								
+                                <option id="gnu.c.compiler.option.optimization.level.965036566" name="Optimization Level" superClass="gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.c.optimization.level.none" valueType="enumerated"/>
+                                								
+                                <option id="gnu.c.compiler.option.optimization.flags.1880572446" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" useByScannerDiscovery="false" value="-Og" valueType="string"/>
+                                								
+                                <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1644434109" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
                                 							
                             </tool>
                             						
@@ -117,7 +147,11 @@
                 			
             </storageModule>
             			
-            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+            <storageModule moduleId="org.eclipse.cdt.core.externalSettings">
+                				
+                <externalSettings containerId="aubio;" factoryId="org.eclipse.cdt.core.cfg.export.settings.sipplier"/>
+                			
+            </storageModule>
             		
         </cconfiguration>
         	
@@ -154,6 +188,18 @@
         </scannerConfigBuildInfo>
         		
         <scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.macosx.base.1263544270;cdt.managedbuild.toolchain.gnu.macosx.base.1263544270.197735905;cdt.managedbuild.tool.gnu.cpp.compiler.macosx.base.1556210800;cdt.managedbuild.tool.gnu.cpp.compiler.input.481682986">
+            			
+            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+            		
+        </scannerConfigBuildInfo>
+        		
+        <scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.macosx.base.1263544270;cdt.managedbuild.toolchain.gnu.macosx.base.1263544270.197735905;cdt.managedbuild.tool.gnu.c.compiler.macosx.base.527003395;cdt.managedbuild.tool.gnu.c.compiler.input.1644434109">
+            			
+            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+            		
+        </scannerConfigBuildInfo>
+        		
+        <scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.macosx.base.1263544270;cdt.managedbuild.toolchain.gnu.macosx.base.1263544270.197735905;cdt.managedbuild.tool.gnu.cpp.compiler.macosx.base.1561134912;cdt.managedbuild.tool.gnu.cpp.compiler.input.1418209345">
             			
             <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
             		
