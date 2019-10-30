@@ -15,7 +15,7 @@ class AubioProcessor {
       : samplerate_(samplerate),
         win_s_(1024),
         hop_size_(hop_size),
-        n_frames_(0) {
+        n_samples_(0) {
     source = new_aubio_source(source_path, samplerate_, hop_size_);
     if (!source) {
       std::cerr << "Can't open " << source_path << "\n";
@@ -34,10 +34,10 @@ class AubioProcessor {
   }
 
   /** answer true until the end of the input */
-  bool read_frames() {
+  bool read_samples() {
     uint_t read;
     aubio_source_do(source, in, &read);
-    n_frames_ += read;
+    n_samples_ += read;
     return read == hop_size_;
   }
 
@@ -46,7 +46,7 @@ class AubioProcessor {
   uint_t win_s_;  // window size
   uint_t hop_size_;
   aubio_source_t *source;
-  uint_t n_frames_;
+  uint_t n_samples_;
   fvec_t *in;  // audio input buffer
 };
 
@@ -73,8 +73,8 @@ class AubioOnsetDetector : public AubioProcessor {
   }
 
   /** answer true until the end of the input */
-  bool process_frames() {
-    bool retval = super::read_frames();
+  bool process_samples() {
+    bool retval = super::read_samples();
     aubio_onset_do(o, in, out);
     return retval;
   }
