@@ -146,6 +146,9 @@ This function uses information both in frequency and in phase to determine chang
   void set_awhitening(bool enable) {
     aubio_onset_set_awhitening(o, enable);
   }
+  void set_compression(smpl_t lambda) {
+    aubio_onset_set_compression(o, lambda);
+  }
 
  protected:
   aubio_onset_t *o;

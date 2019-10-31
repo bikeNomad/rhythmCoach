@@ -14,6 +14,7 @@ struct DetectorSettings {
   smpl_t minioi_ms;   // -i
   smpl_t silence;     // -s
   smpl_t threshold;   // -t
+  smpl_t compression; // -c
   char const *method;  // -m
   char const *source_path;
 };
@@ -25,17 +26,19 @@ static void usage() {
       << "usage:\n"
       << progname
       << "[file1options] file1 [file2options] file2\noptions:\n"
-      << "\t[-h hopsize]    hop size (default=256)\n"
-      << "\t[-m method]     detection method (default|hfc|energy|complex|complexdomain|phase|wphase|mkl|kl|specflux|specdiff)\n"
+      << "\t[-f hopsize]    hop (frame) size (default=256)\n"
       << "\t[-i minioi_ms]  minimum inter-onset interval in ms (default=12)\n"
       << "\t[-s silence]    silence threshold in dB (default=-90)\n"
-      << "\t[-t threshold]  detection threshold (0-1) (default=0.3)\n";
+      << "\t[-t threshold]  detection threshold (0-1) (default=0.3)\n"
+      << "\t[-c compression]  log compression lambda (default=off)\n"
+      << "\t[-m method]     detection method (default|hfc|energy|complex|complexdomain"
+         "|phase|wphase|mkl|kl|specflux|specdiff)\n";
 }
 
 // 21.3 ms minioi = 4 frames of 256 samples at 48ksps
 static float constexpr defaultMinIOI = 21.3;
 
-DetectorSettings constexpr defaultSettings = { 256, defaultMinIOI, -90.0, 0.3, "default", nullptr };
+DetectorSettings constexpr defaultSettings = { 256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr };
 
 static bool getFloat(char const *arg, float &dest) {
   char *str_end;
@@ -51,10 +54,11 @@ static bool getUint(char const *arg, uint_t &dest) {
 
 static void printSettings(DetectorSettings const &settings) {
   std::cerr << "settings: "
-          << " -h " << settings.hop_size
+          << " -f " << settings.hop_size
           << " -i " << settings.minioi_ms
           << " -s " << settings.silence
           << " -t " << settings.threshold
+          << " -c " << settings.compression
           << " -m " << settings.method
           << " " << settings.source_path << "\n";
 }
@@ -65,6 +69,9 @@ static bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int ar
   DetectorSettings settings = defaultSettings;
   for (i = lastarg; i < argc; i++) {
     if (!strcmp("-h", argv[i])) {
+      return false;
+    }
+    if (!strcmp("-f", argv[i])) {
       if (!getUint(argv[++i], settings.hop_size)) {
         return false;
       }
@@ -88,6 +95,12 @@ static bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int ar
       }
       continue;
     }
+    if (!strcmp("-c", argv[i])) {
+      if (!getFloat(argv[++i], settings.compression)) {
+        return false;
+      }
+      continue;
+    }
     if (!strcmp("-m", argv[i])) {
       settings.method = argv[++i];
       continue;
@@ -106,6 +119,9 @@ static bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int ar
   dest->set_threshold(settings.threshold);
   dest->set_minioi_ms(settings.minioi_ms);
   dest->set_silence(settings.silence);
+  if (settings.compression != 0.0) {
+    dest->set_compression(settings.compression);
+  }
   printSettings(settings);
   return true;
 }
