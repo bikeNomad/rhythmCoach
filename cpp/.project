@@ -3,7 +3,6 @@
 	<name>rhythmCoach</name>
 	<comment></comment>
 	<projects>
-		<project>aubio</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
