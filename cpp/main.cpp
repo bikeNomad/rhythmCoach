@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <cmath>
+#include <array>
 
 struct DetectorSettings {
   uint_t hop_size;    // -h
@@ -19,7 +21,15 @@ struct DetectorSettings {
   char const *source_path;
 };
 
+// 21.3 ms minioi = 4 frames of 256 samples at 48ksps
+static float constexpr defaultMinIOI = 21.3;
+
+DetectorSettings constexpr defaultSettings = { 256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr };
+
 static char const *progname = nullptr;
+
+static float minimumWindow = 10.0;  // ms; smallest perceptible difference (?)
+static float maximumWindow = 40.0;  // ms; largest difference that isn't likely to be musically intended
 
 static void usage() {
   std::cerr
@@ -34,11 +44,6 @@ static void usage() {
       << "\t[-m method]     detection method (default|hfc|energy|complex|complexdomain"
          "|phase|wphase|mkl|kl|specflux|specdiff)\n";
 }
-
-// 21.3 ms minioi = 4 frames of 256 samples at 48ksps
-static float constexpr defaultMinIOI = 21.3;
-
-DetectorSettings constexpr defaultSettings = { 256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr };
 
 static bool getFloat(char const *arg, float &dest) {
   char *str_end;
@@ -126,10 +131,9 @@ static bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int ar
   return true;
 }
 
-int main(int argc, char const *argv[]) {
-  progname = argv[0];
-  AubioOnsetDetector *detectors[2];
+AubioOnsetDetector *detectors[2];
 
+static void initializeDetectors(int argc, char const *argv[]) {
   int lastarg = 1;
   for (int i = 0; i < 2; i++) {
     if (!getNextOnsetDetector(detectors[i], lastarg, argc, argv)) {
@@ -137,13 +141,41 @@ int main(int argc, char const *argv[]) {
       exit(1);
     }
   }
+}
 
-  while (detectors[0]->process_samples() && detectors[1]->process_samples()) {
-    if (detectors[0]->is_onset()) {
-      printf("1 %.6f\n", detectors[0]->last_s());
+static void processFiles() {
+  float recent_onsets[2] = { 0.0, 0.0 };
+
+  for (;;) {
+    uint_t num_onsets = 0;
+
+    for (int i = 0; i < 2; i++) {
+      if (!detectors[i]->process_samples()) {
+        return;
+      }
     }
-    if (detectors[1]->is_onset()) {
-      printf("2 %.6f\n", detectors[1]->last_s());
+
+    for (int i = 0; i < 2; i++) {
+      if (detectors[i]->is_onset()) {
+        recent_onsets[i] = detectors[i]->last_ms();
+        num_onsets++;
+      }
+    }
+
+    if (num_onsets) {
+      float diff = recent_onsets[0] - recent_onsets[1];
+      float absdiff = std::abs(diff);
+      if (minimumWindow < absdiff && absdiff < maximumWindow) {
+        float most_recent = diff < 0.0 ? recent_onsets[1] : recent_onsets[0];
+        std::cout << most_recent / 1000.0 << "\t" << diff << "\t" << num_onsets << "\n" ;
+      }
     }
   }
+}
+
+int main(int argc, char const *argv[]) {
+  progname = argv[0];
+  initializeDetectors(argc, argv);
+  processFiles();
+  std::cout << "END: " << detectors[0]->position_s() << "\n";
 }

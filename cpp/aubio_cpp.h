@@ -40,6 +40,10 @@ class AubioProcessor {
     return read == hop_size_;
   }
 
+  float position_s() const {
+    return static_cast<float>(n_samples_) / samplerate_;
+  }
+
  protected:
   uint_t samplerate_;  // sample rate; 0 for automatic
   uint_t win_s_;  // window size
