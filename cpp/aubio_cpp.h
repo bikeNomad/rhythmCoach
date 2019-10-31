@@ -2,7 +2,6 @@
 
 extern "C" {
 #include <aubio.h>
-#include "utils_tests.h"
 }
 #include <iostream>
 
@@ -124,6 +123,9 @@ This function uses information both in frequency and in phase to determine chang
   /** answer the current delay in samples */
   uint_t delay() const { return aubio_onset_get_delay(o); }
  
+  smpl_t descriptor() const { return aubio_onset_get_descriptor(o); }
+  smpl_t thresholded_descriptor() const { return aubio_onset_get_thresholded_descriptor(o); }
+
   /** threshold: 0.1 (more detections) to 1.0 (less); default=0.3 */
   void set_threshold(smpl_t threshold) {
     aubio_onset_set_threshold(o, threshold);
