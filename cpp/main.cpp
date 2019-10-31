@@ -18,9 +18,9 @@ struct DetectorSettings {
   char const *source_path;
 };
 
-char const *progname = nullptr;
+static char const *progname = nullptr;
 
-void usage() {
+static void usage() {
   std::cerr
       << "usage:\n"
       << progname
@@ -32,29 +32,34 @@ void usage() {
       << "\t[-t threshold]  detection threshold (0-1) (default=0.3)\n";
 }
 
-DetectorSettings const defaultSettings = { 256, 12.0, -90.0, 0.3, "default",
-    nullptr };
+// 21.3 ms minioi = 4 frames of 256 samples at 48ksps
+static float constexpr defaultMinIOI = 21.3;
 
-bool getFloat(char const *arg, float &dest) {
+DetectorSettings constexpr defaultSettings = { 256, defaultMinIOI, -90.0, 0.3, "default", nullptr };
+
+static bool getFloat(char const *arg, float &dest) {
   char *str_end;
   dest = std::strtof(arg, &str_end);
   return *str_end == '\0';
 }
 
-bool getUint(char const *arg, uint_t &dest) {
+static bool getUint(char const *arg, uint_t &dest) {
   char *str_end;
   dest = static_cast<uint_t>(std::strtoul(arg, &str_end, 10));
   return *str_end == '\0';
 }
 
-void printSettings(DetectorSettings const &settings) {
-  std::cerr << "settings: " << " -h " << settings.hop_size << " -i "
-            << settings.minioi_ms << " -s " << settings.silence << " -t "
-            << settings.threshold << " -m " << settings.method << " "
-            << settings.source_path << "\n";
+static void printSettings(DetectorSettings const &settings) {
+  std::cerr << "settings: "
+          << " -h " << settings.hop_size
+          << " -i " << settings.minioi_ms
+          << " -s " << settings.silence
+          << " -t " << settings.threshold
+          << " -m " << settings.method
+          << " " << settings.source_path << "\n";
 }
 
-bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int argc,
+static bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int argc,
                           char const *argv[]) {
   int i;
   DetectorSettings settings = defaultSettings;
