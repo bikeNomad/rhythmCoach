@@ -143,15 +143,17 @@ static void initializeDetectors(int argc, char const *argv[]) {
   }
 }
 
-static void processFiles() {
+static uint_t processFiles(uint_t &num_windowed) {
+  uint_t total_onsets = 0;
   float recent_onsets[2] = { 0.0, 0.0 };
+  num_windowed = 0;
 
   for (;;) {
     uint_t num_onsets = 0;
 
     for (int i = 0; i < 2; i++) {
       if (!detectors[i]->process_samples()) {
-        return;
+        return total_onsets;
       }
     }
 
@@ -163,9 +165,11 @@ static void processFiles() {
     }
 
     if (num_onsets) {
+      total_onsets++;
       float diff = recent_onsets[0] - recent_onsets[1];
       float absdiff = std::abs(diff);
       if (minimumWindow < absdiff && absdiff < maximumWindow) {
+        num_windowed++;
         float most_recent = diff < 0.0 ? recent_onsets[1] : recent_onsets[0];
         std::cout << most_recent / 1000.0 << "\t" << diff << "\t" << num_onsets << "\n" ;
       }
@@ -176,6 +180,9 @@ static void processFiles() {
 int main(int argc, char const *argv[]) {
   progname = argv[0];
   initializeDetectors(argc, argv);
-  processFiles();
-  std::cout << "END: " << detectors[0]->position_s() << "\n";
+  uint_t num_windowed;
+  uint_t total_onsets = processFiles(num_windowed);
+  float percent = 100.0 * static_cast<float>(num_windowed) / total_onsets;
+  std::cout << "# " << num_windowed << "/" << total_onsets
+      << " (" << percent << "%) onsets in " << detectors[0]->position_s() << " seconds\n";
 }
