@@ -3,13 +3,14 @@
  */
 
 #include "aubio_cpp.h"
-#include "delay_line.h"
+#include "comb_filter.h"
 #include <iostream>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <cmath>
 #include <array>
+#include <fstream>
 
 struct DetectorSettings {
   uint_t hop_size;    // -h
@@ -133,6 +134,25 @@ static bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int ar
 
 AubioOnsetDetector *detectors[2];
 
+/** save up to 2 seconds for rhythm analysis */
+constexpr unsigned MaxDelay = { 48000 / 256 * 2 };
+
+/** this stores the number of onsets for each frame back 2 seconds */
+/** this is the comb filterbank for each frame of periodicity */
+CombFilterbank<unsigned, uint8_t, MaxDelay> comb_filter;
+
+/** call this for each frame */
+static void updateCombFilter(uint8_t nOnsets) {
+  comb_filter.add_item(nOnsets);  // add to delay line and update comb filter
+}
+
+static void printCombFilter(FILE *file) {
+  for (unsigned i = 0; i < MaxDelay; i++) {
+    fprintf(file, "%.3f ", comb_filter.normalized_at(i));
+  }
+  fprintf(file, "\n");
+}
+
 static void initializeDetectors(int argc, char const *argv[]) {
   int lastarg = 1;
   for (int i = 0; i < 2; i++) {
@@ -143,10 +163,11 @@ static void initializeDetectors(int argc, char const *argv[]) {
   }
 }
 
-static uint_t processFiles(uint_t &num_windowed) {
+static uint_t processFiles(uint_t &num_windowed, const char *combfilename) {
   uint_t total_onsets = 0;
   float recent_onsets[2] = { 0.0, 0.0 };
   num_windowed = 0;
+  FILE *comb_output = fopen(combfilename, "w");
 
   for (;;) {
     uint_t num_onsets = 0;
@@ -174,6 +195,9 @@ static uint_t processFiles(uint_t &num_windowed) {
         std::cout << most_recent / 1000.0 << "\t" << diff << "\t" << num_onsets << "\n" ;
       }
     }
+
+    updateCombFilter(num_onsets);
+    printCombFilter(comb_output);
   }
 }
 
@@ -181,7 +205,7 @@ int main(int argc, char const *argv[]) {
   progname = argv[0];
   initializeDetectors(argc, argv);
   uint_t num_windowed;
-  uint_t total_onsets = processFiles(num_windowed);
+  uint_t total_onsets = processFiles(num_windowed, "combFilter.txt");
   float percent = 100.0 * static_cast<float>(num_windowed) / total_onsets;
   std::cout << "# " << num_windowed << "/" << total_onsets
       << " (" << percent << "%) onsets in " << detectors[0]->position_s() << " seconds\n";

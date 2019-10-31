@@ -4,7 +4,6 @@
  */
 
 #pragma once
-#include <array>
 #include <iterator>
 
 template<class T, unsigned N>
@@ -41,7 +40,7 @@ class DelayLine {
     unsigned pos;
   };
 
-  DelayLine() : items_(), head_(0) { clear(); }
+  DelayLine() : items_(), head_(0), empty_item_(0) { clear(); }
 
   constexpr unsigned size() { return N; }
 
@@ -51,11 +50,11 @@ class DelayLine {
     if (index < 0) {
       index += N;
     }
-    return items_.at(index);
+    return items_[index];
   }
 
   void add_item(T item) {
-    items_.at(head_++) = item;
+    items_[head_++] = item;
     if (head_ >= N) {
       head_ -= N;
     }
@@ -63,15 +62,17 @@ class DelayLine {
 
   void clear() {
     head_ = 0;
-    items_.fill(empty_item_);
+    for (unsigned i = 0; i < N; i++) {
+      items_[i] = empty_item_;
+    }
   }
 
   const_iterator cbegin() { return const_iterator(this, 0); }
   const_iterator cend() { return const_iterator(this, N); }
 
  protected:
-  std::array<T, N> items_;
+  T items_[N];
   unsigned head_;
-  static constexpr T empty_item_ = {0};
+  const T empty_item_;
 };
 
