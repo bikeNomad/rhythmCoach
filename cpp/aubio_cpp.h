@@ -44,6 +44,10 @@ class AubioProcessor {
     return static_cast<float>(n_samples_) / samplerate_;
   }
 
+  unsigned total_hops() const {
+    return aubio_source_get_duration(source) / hop_size_;
+  }
+
  protected:
   uint_t samplerate_;  // sample rate; 0 for automatic
   uint_t win_s_;  // window size

@@ -11,6 +11,7 @@
 #include <cmath>
 #include <array>
 #include <fstream>
+#include <png++/png.hpp>
 
 struct DetectorSettings {
   uint_t hop_size;    // -h
@@ -134,24 +135,12 @@ static bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int ar
 
 AubioOnsetDetector *detectors[2];
 
-/** save up to 2 seconds for rhythm analysis */
-constexpr unsigned MaxDelay = { 48000 / 256 * 2 };
+/** save up to 3 seconds for rhythm analysis */
+constexpr unsigned MaxDelay = { 48000 / 256 * 3 };
 
 /** this stores the number of onsets for each frame back 2 seconds */
 /** this is the comb filterbank for each frame of periodicity */
 CombFilterbank<unsigned, uint8_t, MaxDelay> comb_filter;
-
-/** call this for each frame */
-static void updateCombFilter(uint8_t nOnsets) {
-  comb_filter.add_item(nOnsets);  // add to delay line and update comb filter
-}
-
-static void printCombFilter(FILE *file) {
-  for (unsigned i = 0; i < MaxDelay; i++) {
-    fprintf(file, "%.3f ", comb_filter.normalized_at(i));
-  }
-  fprintf(file, "\n");
-}
 
 static void initializeDetectors(int argc, char const *argv[]) {
   int lastarg = 1;
@@ -163,18 +152,24 @@ static void initializeDetectors(int argc, char const *argv[]) {
   }
 }
 
-static uint_t processFiles(uint_t &num_windowed, const char *combfilename) {
+static uint_t processFiles(uint_t &num_windowed) {
   uint_t total_onsets = 0;
   float recent_onsets[2] = { 0.0, 0.0 };
   num_windowed = 0;
-  FILE *comb_output = fopen(combfilename, "w");
+  unsigned max_frames = std::max(detectors[0]->total_hops(), detectors[1]->total_hops());
+  unsigned num_frames = 0;
+  unsigned every_n = max_frames / 1024;
+  uint_t retval;
+
+  png::image<png::rgb_pixel> image(max_frames / every_n, MaxDelay);
 
   for (;;) {
     uint_t num_onsets = 0;
 
     for (int i = 0; i < 2; i++) {
       if (!detectors[i]->process_samples()) {
-        return total_onsets;
+        retval = total_onsets;
+        goto done;
       }
     }
 
@@ -196,16 +191,28 @@ static uint_t processFiles(uint_t &num_windowed, const char *combfilename) {
       }
     }
 
-    updateCombFilter(num_onsets);
-    printCombFilter(comb_output);
+    comb_filter.add_item(num_onsets);  // add to delay line and update comb filter
+
+    if (num_frames % every_n == 0) {
+      for (unsigned i = 0; i < MaxDelay; i++) {
+        uint8_t value = comb_filter.normalized_at(i) * 1024;
+        image[i][num_frames / every_n] = png::rgb_pixel(value, value, value);
+      }
+    }
+
+    num_frames++;
   }
+
+done:
+  image.write("combFilter.png");
+  return retval;
 }
 
 int main(int argc, char const *argv[]) {
   progname = argv[0];
   initializeDetectors(argc, argv);
   uint_t num_windowed;
-  uint_t total_onsets = processFiles(num_windowed, "combFilter.txt");
+  uint_t total_onsets = processFiles(num_windowed);
   float percent = 100.0 * static_cast<float>(num_windowed) / total_onsets;
   std::cout << "# " << num_windowed << "/" << total_onsets
       << " (" << percent << "%) onsets in " << detectors[0]->position_s() << " seconds\n";
