@@ -5,6 +5,7 @@
 #pragma once
 
 #include "delay_line.h"
+#include <array>
 
 /**
  * @param ItemType the type of the comb filter accumulator elements
@@ -50,7 +51,7 @@ class CombFilterbank {
 
  protected:
   DelayLine<InputItemType, N> delay_line_;
-  ItemType accumulator_[N];
+  std::array<ItemType,N> accumulator_;
   unsigned num_items_;
   static constexpr ItemType empty_item_ = {0};
 };
