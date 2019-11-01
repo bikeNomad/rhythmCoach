@@ -133,7 +133,14 @@ static bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int ar
   return true;
 }
 
-AubioOnsetDetector *detectors[2];
+struct Source {
+  AubioOnsetDetector *detector;
+  bool had_onset;
+  float onset_quality;
+  float latest_onset;
+};
+
+Source sources[2];
 
 /** save up to 3 seconds for rhythm analysis */
 constexpr unsigned MaxDelay = { 48000 / 256 * 3 };
@@ -145,7 +152,7 @@ CombFilterbank<unsigned, uint8_t, MaxDelay> comb_filter;
 static void initializeDetectors(int argc, char const *argv[]) {
   int lastarg = 1;
   for (int i = 0; i < 2; i++) {
-    if (!getNextOnsetDetector(detectors[i], lastarg, argc, argv)) {
+    if (!getNextOnsetDetector(sources[i].detector, lastarg, argc, argv)) {
       usage();
       exit(1);
     }
@@ -154,44 +161,60 @@ static void initializeDetectors(int argc, char const *argv[]) {
 
 static uint_t processFiles(uint_t &num_windowed) {
   uint_t total_onsets = 0;
-  float recent_onsets[2] = { 0.0, 0.0 };
   num_windowed = 0;
-  unsigned max_frames = std::max(detectors[0]->total_hops(), detectors[1]->total_hops());
+  unsigned max_frames = std::max(sources[0].detector->total_hops(), sources[1].detector->total_hops());
   unsigned num_frames = 0;
   unsigned every_n = max_frames / 1024;
   uint_t retval;
-
+  const char sep = ',';
   png::image<png::rgb_pixel> image(max_frames / every_n, MaxDelay);
+
+  std::cout << "chan,had_onset,latest_onset,quality,diff\n";
 
   for (;;) {
     uint_t num_onsets = 0;
 
     for (int i = 0; i < 2; i++) {
-      if (!detectors[i]->process_samples()) {
+      if (!sources[i].detector->process_samples()) { // end of file?
         retval = total_onsets;
         goto done;
       }
     }
 
     for (int i = 0; i < 2; i++) {
-      if (detectors[i]->is_onset()) {
-        recent_onsets[i] = detectors[i]->last_ms();
+      if ((sources[i].had_onset = sources[i].detector->is_onset())) {
+        sources[i].latest_onset = sources[i].detector->last_ms();
         num_onsets++;
+      }
+    }
+
+    float quality = comb_filter.add_item(num_onsets);  // add to delay line and update comb filter
+
+    for (int i = 0; i < 2; i++) {
+      if (sources[i].had_onset) {
+        sources[i].onset_quality = quality;
       }
     }
 
     if (num_onsets) {
       total_onsets++;
-      float diff = recent_onsets[0] - recent_onsets[1];
+      float diff = sources[0].latest_onset - sources[1].latest_onset;
       float absdiff = std::abs(diff);
       if (minimumWindow < absdiff && absdiff < maximumWindow) {
         num_windowed++;
-        float most_recent = diff < 0.0 ? recent_onsets[1] : recent_onsets[0];
-        std::cout << most_recent / 1000.0 << "\t" << diff << "\t" << num_onsets << "\n" ;
+        // output both onsets
+        for (int i = 0; i < 2; i++) {
+          Source &s = sources[i];
+          std::cout
+            << i << sep
+            << s.had_onset << sep
+            << s.latest_onset / 1000.0 << sep
+            << s.onset_quality << sep
+            << ((i==1) ? -diff : diff)
+            << "\n";
+        }
       }
     }
-
-    comb_filter.add_item(num_onsets);  // add to delay line and update comb filter
 
     if (num_frames % every_n == 0) {
       for (unsigned i = 0; i < MaxDelay; i++) {
@@ -215,5 +238,5 @@ int main(int argc, char const *argv[]) {
   uint_t total_onsets = processFiles(num_windowed);
   float percent = 100.0 * static_cast<float>(num_windowed) / total_onsets;
   std::cout << "# " << num_windowed << "/" << total_onsets
-      << " (" << percent << "%) onsets in " << detectors[0]->position_s() << " seconds\n";
+      << " (" << percent << "%) onsets in " << sources[0].detector->position_s() << " seconds\n";
 }

@@ -16,14 +16,18 @@ class CombFilterbank {
  public:
   CombFilterbank() :delay_line_(), accumulator_(), num_items_(0) { clear(); }
 
-  void add_item(InputItemType item) {
+  /** @return quality factor */
+  float add_item(InputItemType item) {
+    float retval = 0.0;
     delay_line_.add_item(item);
     if (item > 0) {
       for (unsigned i = 0; i < N; i++) {
-        accumulator_[i] += delay_line_[i];
+       retval += (accumulator_[i] += delay_line_[i]);
       }
       num_items_++;
+      retval /= num_items_;
     }
+    return retval;
   }
 
   ItemType operator[](unsigned delay) const {
