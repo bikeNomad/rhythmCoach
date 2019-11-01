@@ -1,7 +1,7 @@
 #pragma once
 
 extern "C" {
-#include <aubio.h>
+#include <aubio/aubio.h>
 }
 #include <iostream>
 
