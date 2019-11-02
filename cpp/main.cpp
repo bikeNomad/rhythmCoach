@@ -30,6 +30,7 @@ constexpr unsigned MaxImageWidth = 1024U;
 DetectorSettings constexpr defaultSettings = { 256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr };
 
 static char const *progname = nullptr;
+static char const *pngname = "comb_filter.png";
 
 static float minimumWindow = 10.0;  // ms; smallest perceptible difference (?)
 static float maximumWindow = 40.0;  // ms; largest difference that isn't likely to be musically intended
@@ -45,6 +46,7 @@ static void usage() {
       << "\t[-t threshold]  detection threshold (0-1) (default=0.3)\n"
       << "\t[-c compression]  log compression lambda (default=off)\n"
       << "\t[-m method]     detection method (default|hfc|energy|complex|complexdomain"
+      << "\t[-o filename]   output filename for PNG (default=comb_filter.png)"
          "|phase|wphase|mkl|kl|specflux|specdiff)\n";
 }
 
@@ -75,47 +77,20 @@ static bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int ar
                           char const *argv[]) {
   int i;
   DetectorSettings settings = defaultSettings;
+/* clang-format off */
   for (i = lastarg; i < argc; i++) {
-    if (!strcmp("-h", argv[i])) {
-      return false;
-    }
-    if (!strcmp("-f", argv[i])) {
-      if (!getUint(argv[++i], settings.hop_size)) {
-        return false;
-      }
-      continue;
-    }
-    if (!strcmp("-i", argv[i])) {
-      if (!getFloat(argv[++i], settings.minioi_ms)) {
-        return false;
-      }
-      continue;
-    }
-    if (!strcmp("-s", argv[i])) {
-      if (!getFloat(argv[++i], settings.silence)) {
-        return false;
-      }
-      continue;
-    }
-    if (!strcmp("-t", argv[i])) {
-      if (!getFloat(argv[++i], settings.threshold)) {
-        return false;
-      }
-      continue;
-    }
-    if (!strcmp("-c", argv[i])) {
-      if (!getFloat(argv[++i], settings.compression)) {
-        return false;
-      }
-      continue;
-    }
-    if (!strcmp("-m", argv[i])) {
-      settings.method = argv[++i];
-      continue;
-    }
+    if (!strcmp("-h", argv[i])) { return false; }
+    if (!strcmp("-f", argv[i])) { if (!getUint(argv[++i], settings.hop_size)) { return false; } continue; }
+    if (!strcmp("-i", argv[i])) { if (!getFloat(argv[++i], settings.minioi_ms)) { return false; } continue; }
+    if (!strcmp("-s", argv[i])) { if (!getFloat(argv[++i], settings.silence)) { return false; } continue; }
+    if (!strcmp("-t", argv[i])) { if (!getFloat(argv[++i], settings.threshold)) { return false; } continue; }
+    if (!strcmp("-c", argv[i])) { if (!getFloat(argv[++i], settings.compression)) { return false; } continue; }
+    if (!strcmp("-m", argv[i])) { settings.method = argv[++i]; continue; }
+    if (!strcmp("-o", argv[i])) { pngname = argv[++i]; continue; }
     settings.source_path = argv[i];
     break;
   }
+/* clang-format on */
   if (i >= argc || !settings.source_path) {
     return false;
   }
@@ -251,7 +226,7 @@ done:
     image.set_pixel(x, maxpos/2, png::rgb_pixel(0, 255, 0));
     image.set_pixel(x, maxpos*2, png::rgb_pixel(0, 0, 255));
   }
-  image.write("combFilter.png");
+  image.write(pngname);
 
   delete &comb_filter;
   delete[] history;
