@@ -24,7 +24,8 @@ struct DetectorSettings {
 };
 
 // 21.3 ms minioi = 4 frames of 256 samples at 48ksps
-static float constexpr defaultMinIOI = 21.3;
+constexpr float defaultMinIOI = 21.3;
+constexpr unsigned MaxImageWidth = 1024U;
 
 DetectorSettings constexpr defaultSettings = { 256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr };
 
@@ -136,7 +137,6 @@ static bool getNextOnsetDetector(AubioOnsetDetector *&dest, int &lastarg, int ar
 struct Source {
   AubioOnsetDetector *detector;
   bool had_onset;
-  float onset_quality;
   float latest_onset;
 };
 
@@ -145,9 +145,7 @@ Source sources[2];
 /** save up to 3 seconds for rhythm analysis */
 constexpr unsigned MaxDelay = { 48000 / 256 * 3 };
 
-/** this stores the number of onsets for each frame back 2 seconds */
-/** this is the comb filterbank for each frame of periodicity */
-CombFilterbank<unsigned, uint8_t, MaxDelay> comb_filter;
+
 
 static void initializeDetectors(int argc, char const *argv[]) {
   int lastarg = 1;
@@ -159,23 +157,35 @@ static void initializeDetectors(int argc, char const *argv[]) {
   }
 }
 
+typedef png::image<png::rgb_pixel> image_type;
+typedef CombFilterbank<unsigned, uint8_t, MaxDelay> filter_type;
+
+struct HistoryItem {
+  filter_type::accumulator_type filter_output;
+  unsigned num_onsets;
+};
+
 static uint_t processFiles(uint_t &num_windowed) {
+  /** this is the comb filterbank for each frame of periodicity */
   uint_t total_onsets = 0;
-  num_windowed = 0;
   unsigned max_frames = std::max(sources[0].detector->total_hops(), sources[1].detector->total_hops());
   unsigned num_frames = 0;
-  unsigned every_n = max_frames / 1024;
+  unsigned every_n = max_frames / MaxImageWidth;
   uint_t retval;
   const char sep = ',';
-  png::image<png::rgb_pixel> image(max_frames / every_n, MaxDelay);
 
-  std::cout << "chan,had_onset,latest_onset,quality,diff\n";
+  filter_type &comb_filter = *new filter_type();
+  filter_type::accumulator_type const &accumulator(comb_filter.accumulator());
+  HistoryItem *history = new HistoryItem[MaxImageWidth];
+
+  num_windowed = 0;
+  std::cout << "chan,had_onset,latest_onset,diff\n";
 
   for (;;) {
     uint_t num_onsets = 0;
 
     for (int i = 0; i < 2; i++) {
-      if (!sources[i].detector->process_samples()) { // end of file?
+      if (!sources[i].detector->process_samples()) {  // end of file?
         retval = total_onsets;
         goto done;
       }
@@ -188,13 +198,8 @@ static uint_t processFiles(uint_t &num_windowed) {
       }
     }
 
-    float quality = comb_filter.add_item(num_onsets);  // add to delay line and update comb filter
-
-    for (int i = 0; i < 2; i++) {
-      if (sources[i].had_onset) {
-        sources[i].onset_quality = quality;
-      }
-    }
+    // add to delay line and update comb filter
+    comb_filter.add_item(num_onsets);
 
     if (num_onsets) {
       total_onsets++;
@@ -205,29 +210,51 @@ static uint_t processFiles(uint_t &num_windowed) {
         // output both onsets
         for (int i = 0; i < 2; i++) {
           Source &s = sources[i];
-          std::cout
-            << i << sep
-            << s.had_onset << sep
-            << s.latest_onset / 1000.0 << sep
-            << s.onset_quality << sep
-            << ((i==1) ? -diff : diff)
-            << "\n";
+          std::cout << i << sep << s.had_onset << sep << s.latest_onset / 1000.0
+                    << sep << ((i == 1) ? -diff : diff) << "\n";
         }
       }
     }
 
+    /*  store comb filter info into a History Item */
     if (num_frames % every_n == 0) {
-      for (unsigned i = 0; i < MaxDelay; i++) {
-        uint8_t value = comb_filter.normalized_at(i) * 1024;
-        image[i][num_frames / every_n] = png::rgb_pixel(value, value, value);
-      }
+      unsigned index = num_frames / every_n;
+      if (index >= MaxImageWidth)
+        break;
+      HistoryItem &history_item = history[num_frames / every_n];
+      history_item.num_onsets = comb_filter.num_items();
+      history_item.filter_output = accumulator;
     }
 
     num_frames++;
   }
 
 done:
+  /* scale history into image pixels */
+  image_type image(MaxImageWidth, MaxDelay);
+
+  for (unsigned x = 0; x < MaxImageWidth; x++) {
+    auto column_history = history[x];
+    for (int i = 0; i < 5; i++) { column_history.filter_output[i] = 0; }
+    auto maxelem = std::max_element(column_history.filter_output.cbegin(),
+            column_history.filter_output.cend());
+    float scale = static_cast<float>(*maxelem) / column_history.num_onsets;
+    unsigned maxpos = maxelem - column_history.filter_output.cbegin();
+    for (unsigned y = 0; y < MaxDelay; y++) {
+        float normalized = static_cast<float>(column_history.filter_output[y])
+              / column_history.num_onsets / scale;
+        uint8_t val = std::round(normalized * 255);
+        png::rgb_pixel pixel(val, val, val);
+        image.set_pixel(x, y, pixel);
+    }
+    image.set_pixel(x, maxpos, png::rgb_pixel(255, 0, 0)); // mark the maximum with red
+    image.set_pixel(x, maxpos/2, png::rgb_pixel(0, 255, 0));
+    image.set_pixel(x, maxpos*2, png::rgb_pixel(0, 0, 255));
+  }
   image.write("combFilter.png");
+
+  delete &comb_filter;
+  delete[] history;
   return retval;
 }
 

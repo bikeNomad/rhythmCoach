@@ -17,18 +17,16 @@ class CombFilterbank {
  public:
   CombFilterbank() :delay_line_(), accumulator_(), num_items_(0) { clear(); }
 
-  /** @return quality factor */
-  float add_item(InputItemType item) {
-    float retval = 0.0;
+  typedef std::array<ItemType,N> accumulator_type;
+
+  const accumulator_type &accumulator() const { return accumulator_; }
+
+  void add_item(InputItemType item) {
     delay_line_.add_item(item);
     if (item > 0) {
-      for (unsigned i = 0; i < N; i++) {
-       retval += (accumulator_[i] += delay_line_[i]);
-      }
+      for (unsigned i = 0; i < N; i++) { accumulator_[i] += delay_line_[i]; }
       num_items_++;
-      retval /= num_items_;
     }
-    return retval;
   }
 
   ItemType operator[](unsigned delay) const {
@@ -43,10 +41,6 @@ class CombFilterbank {
       accumulator_[i] = empty_item_;
     }
     num_items_ = 0;
-  }
-
-  float normalized_at(unsigned delay) const {
-    return static_cast<float>(accumulator_[delay]) / num_items_;
   }
 
  protected:
