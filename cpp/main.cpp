@@ -18,7 +18,8 @@ static void usage() {
       << "\t[-c compression]  log compression lambda (default=off)\n"
       << "\t[-m method]     detection method (default|hfc|energy|complex|complexdomain"
           "|phase|wphase|mkl|kl|specflux|specdiff)\n"
-      << "\t[-o filename]   output filename for PNG (default=comb_filter[12].png)\n";
+      << "\t[-o filename]   output filename for PNG (default=comb_filter[12].png)\n"
+      << "\t[-w winsize]    FFT window size (default=1024)\n";
 }
 
 std::vector<source_type *> sources;

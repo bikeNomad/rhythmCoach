@@ -16,10 +16,11 @@ struct DetectorSettings {
   char const *method;  // -m
   char const *source_path;
   char const *png_path;
+  uint_t window_size;
 };
 
 constexpr DetectorSettings defaultSettings
-  = { 256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr, nullptr };
+  = { 256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr, nullptr, 1024 };
 
 template<unsigned MaxFramesDelay, unsigned ImageWidth>
 class Source {
@@ -93,7 +94,7 @@ static void printSettings(DetectorSettings const &settings) {
             << settings.minioi_ms << " -s " << settings.silence << " -t "
             << settings.threshold << " -c " << settings.compression << " -m "
             << settings.method << " " << settings.source_path << " "
-            << settings.png_path
+            << settings.png_path << " " << settings.window_size
             << "\n";
 }
 
@@ -156,8 +157,10 @@ void Source<MaxFramesDelay, ImageWidth>::writeImage() {
 
 template<unsigned M, unsigned I>
 bool Source<M, I>::applySettings(DetectorSettings const &settings) {
-  detector = new AubioOnsetDetector(settings.source_path, 0, settings.hop_size,
-                                    settings.method);
+  detector = new AubioOnsetDetector(settings.source_path,
+                                    0, settings.hop_size,
+                                    settings.method,
+                                    settings.window_size);
   if (!detector)
     return false;
   detector->set_threshold(settings.threshold);
@@ -224,6 +227,12 @@ bool Source<M, I>::getNextSource(Source &s,
     }
     if (!strcmp("-o", argv[i])) {
       settings.png_path = argv[++i];
+      continue;
+    }
+    if (!strcmp("-w", argv[i])) {
+      if (!getUint(argv[++i], settings.window_size)) {
+        return false;
+      }
       continue;
     }
     // else

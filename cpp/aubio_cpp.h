@@ -10,9 +10,10 @@ extern "C" {
 class AubioProcessor {
  public:
   AubioProcessor(char const *source_path, uint_t samplerate = 0,
-                 uint_t hop_size = 256)
+                 uint_t hop_size = 256,
+                 uint_t win_size = 1024)
       : samplerate_(samplerate),
-        win_s_(1024),
+        win_s_(win_size),
         hop_size_(hop_size),
         n_samples_(0) {
     source = new_aubio_source(source_path, samplerate_, hop_size_);
@@ -93,8 +94,9 @@ This function uses information both in frequency and in phase to determine chang
   AubioOnsetDetector(char const *source_path,
                      uint_t samplerate = 0,
                      uint_t hop_size = 256,
-                     char const *method = "default")
-      : AubioProcessor(source_path, samplerate, hop_size) {
+                     char const *method = "default",
+                     uint_t win_size = 1024)
+      : AubioProcessor(source_path, samplerate, hop_size, win_size) {
     o = new_aubio_onset(method, win_s_, hop_size_, samplerate_);
     out = new_fvec(2);
     assert(out != nullptr);
