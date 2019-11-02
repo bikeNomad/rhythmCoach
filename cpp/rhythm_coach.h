@@ -4,26 +4,27 @@
 
 #pragma once
 
-#include "aubio_cpp.h"
-#include "comb_filter.h"
-#include <iostream>
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
-#include <cstdint>
-#include <cmath>
 #include <array>
+#include <cassert>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
+#include <iostream>
 #include <png++/png.hpp>
 #include <vector>
-#include <cassert>
+
+#include "aubio_cpp.h"
+#include "comb_filter.h"
 
 // 21.3 ms minioi = 4 frames of 256 samples at 48ksps
 constexpr float defaultMinIOI = 21.3;
 constexpr unsigned MaxImageWidth = 1024U;
 
 /** save up to 3 seconds for rhythm analysis */
-constexpr unsigned MaxDelay = { 48000 / 256 * 3 };
+constexpr unsigned MaxDelay = {48000 / 256 * 3};
 
 typedef png::image<png::rgb_pixel> image_type;
 

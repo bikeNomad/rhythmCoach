@@ -8,41 +8,42 @@
 typedef CombFilterbank<unsigned, uint8_t, MaxDelay> filter_type;
 
 struct DetectorSettings {
-  uint_t hop_size;    // -h
-  smpl_t minioi_ms;   // -i
-  smpl_t silence;     // -s
-  smpl_t threshold;   // -t
-  smpl_t compression; // -c
+  uint_t hop_size;     // -h
+  smpl_t minioi_ms;    // -i
+  smpl_t silence;      // -s
+  smpl_t threshold;    // -t
+  smpl_t compression;  // -c
   char const *method;  // -m
   char const *source_path;
   char const *png_path;
   uint_t window_size;
 };
 
-constexpr DetectorSettings defaultSettings
-  = { 256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr, nullptr, 1024 };
+constexpr DetectorSettings defaultSettings = {
+    256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr, nullptr, 1024};
 
-template<unsigned MaxFramesDelay, unsigned ImageWidth>
+template <unsigned MaxFramesDelay, unsigned ImageWidth>
 class Source {
-public:
+ public:
   struct HistoryItem {
     filter_type::accumulator_type filter_output;
     unsigned num_onsets;
   };
 
-  Source() : detector(nullptr),
-      history(new HistoryItem[ImageWidth]),
-      png_name(nullptr), input_name(nullptr), frames_since_last_onset(0),
-      had_onset(false), latest_onset(0.0), processed_frames(0), skip(0) {
-  }
+  Source()
+      : detector(nullptr),
+        history(new HistoryItem[ImageWidth]),
+        png_name(nullptr),
+        input_name(nullptr),
+        frames_since_last_onset(0),
+        had_onset(false),
+        latest_onset(0.0),
+        processed_frames(0),
+        skip(0) {}
 
-  ~Source() {
-    delete[] history;
-  }
+  ~Source() { delete[] history; }
 
-  void initialize() {
-    skip = totalFrames() / ImageWidth;
-  }
+  void initialize() { skip = totalFrames() / ImageWidth; }
 
   bool applySettings(DetectorSettings const &settings);
 
@@ -52,18 +53,18 @@ public:
 
   unsigned totalFrames() const { return detector->total_hops(); }
 
-  static bool getNextSource(Source &s, int &lastarg,
-                            int argc, char const *argv[],
-                            const char *default_outputname);
+  static bool getNextSource(Source &s, int &lastarg, int argc,
+                            char const *argv[], const char *default_outputname);
 
   bool hadOnset() const { return had_onset; }
 
   void addToHistory(unsigned index) {
     history[index].num_onsets = comb_filter.num_items();
-    history[index].filter_output = comb_filter.accumulator(); // copy accumulator
+    history[index].filter_output =
+        comb_filter.accumulator();  // copy accumulator
   }
 
-protected:
+ protected:
   filter_type comb_filter;
   AubioOnsetDetector *detector;
   HistoryItem *history;
@@ -90,22 +91,22 @@ static bool getUint(char const *arg, uint_t &dest) {
 }
 
 static void printSettings(DetectorSettings const &settings) {
-  std::cerr << "settings: " << " -f " << settings.hop_size << " -i "
-            << settings.minioi_ms << " -s " << settings.silence << " -t "
-            << settings.threshold << " -c " << settings.compression << " -m "
-            << settings.method << " " << settings.source_path << " "
-            << settings.png_path << " " << settings.window_size
-            << "\n";
+  std::cerr << "settings: "
+            << " -f " << settings.hop_size << " -i " << settings.minioi_ms
+            << " -s " << settings.silence << " -t " << settings.threshold
+            << " -c " << settings.compression << " -m " << settings.method
+            << " " << settings.source_path << " " << settings.png_path << " "
+            << settings.window_size << "\n";
 }
 
-template<unsigned MaxFramesDelay, unsigned ImageWidth>
+template <unsigned MaxFramesDelay, unsigned ImageWidth>
 bool Source<MaxFramesDelay, ImageWidth>::processNextFrame() {
   if (!detector->process_samples()) {
     return false;
   }
 
   if ((had_onset = detector->is_onset())) {
-    latest_onset =  detector->last_ms();
+    latest_onset = detector->last_ms();
     frames_since_last_onset = 0;
   } else {
     frames_since_last_onset++;
@@ -123,13 +124,13 @@ bool Source<MaxFramesDelay, ImageWidth>::processNextFrame() {
   return true;
 }
 
-template<unsigned MaxFramesDelay, unsigned ImageWidth>
+template <unsigned MaxFramesDelay, unsigned ImageWidth>
 void Source<MaxFramesDelay, ImageWidth>::writeImage() {
   /* scale history into image pixels */
   image_type image(ImageWidth, MaxFramesDelay);
 
   for (unsigned x = 0; x < ImageWidth; x++) {
-    HistoryItem & column_history(history[x]);
+    HistoryItem &column_history(history[x]);
     for (int i = 0; i < 5; i++) {
       column_history.filter_output[i] = 0;
     }
@@ -140,13 +141,14 @@ void Source<MaxFramesDelay, ImageWidth>::writeImage() {
     unsigned maxpos = maxelem - column_history.filter_output.cbegin();
     assert(maxpos < MaxFramesDelay);
     for (unsigned y = 0; y < MaxFramesDelay; y++) {
-      float normalized = static_cast<float>(column_history.filter_output[y])
-          / column_history.num_onsets / scale;
+      float normalized = static_cast<float>(column_history.filter_output[y]) /
+                         column_history.num_onsets / scale;
       uint8_t val = std::round(normalized * 255);
       png::rgb_pixel pixel(val, val, val);
       image.set_pixel(x, y, pixel);
     }
-    image.set_pixel(x, maxpos, png::rgb_pixel(255, 0, 0));  // mark the maximum with red
+    image.set_pixel(x, maxpos,
+                    png::rgb_pixel(255, 0, 0));  // mark the maximum with red
     image.set_pixel(x, maxpos / 2, png::rgb_pixel(0, 255, 0));
     if (maxpos * 2 < MaxFramesDelay) {
       image.set_pixel(x, maxpos * 2, png::rgb_pixel(0, 0, 255));
@@ -155,14 +157,13 @@ void Source<MaxFramesDelay, ImageWidth>::writeImage() {
   image.write(png_name);
 }
 
-template<unsigned M, unsigned I>
+template <unsigned M, unsigned I>
 bool Source<M, I>::applySettings(DetectorSettings const &settings) {
-  detector = new AubioOnsetDetector(settings.source_path,
-                                    0, settings.hop_size,
-                                    settings.method,
-                                    settings.window_size);
-  if (!detector)
+  detector = new AubioOnsetDetector(settings.source_path, 0, settings.hop_size,
+                                    settings.method, settings.window_size);
+  if (!detector) {
     return false;
+  }
   detector->set_threshold(settings.threshold);
   detector->set_minioi_ms(settings.minioi_ms);
   detector->set_silence(settings.silence);
@@ -177,70 +178,32 @@ bool Source<M, I>::applySettings(DetectorSettings const &settings) {
 }
 
 // class static
-template<unsigned M, unsigned I>
-bool Source<M, I>::getNextSource(Source &s,
-                                 int &lastarg,
-                                  int argc,
-                                  char const *argv[],
-                                  const char *default_outputname) {
-
+template <unsigned M, unsigned I>
+bool Source<M, I>::getNextSource(Source &s, int &lastarg, int argc,
+                                 char const *argv[],
+                                 const char *default_outputname) {
   int i;
   DetectorSettings settings = defaultSettings;
   /* clang-format off */
-  for (i = lastarg; i < argc; i++) {
-    if (!strcmp("-h", argv[i])) {
-      return false;
+    for (i = lastarg; i < argc; i++)
+    {
+        if (!strcmp("-h", argv[i])) { return false; }
+        if (!strcmp("-f", argv[i])) { if (!getUint(argv[++i], settings.hop_size)) { return false; } continue; }
+        if (!strcmp("-i", argv[i])) { if (!getFloat(argv[++i], settings.minioi_ms)) { return false; } continue; }
+        if (!strcmp("-s", argv[i])) { if (!getFloat(argv[++i], settings.silence)) { return false; } continue; }
+        if (!strcmp("-t", argv[i])) { if (!getFloat(argv[++i], settings.threshold)) { return false; } continue; }
+        if (!strcmp("-c", argv[i])) { if (!getFloat(argv[++i], settings.compression)) { return false; } continue; }
+        if (!strcmp("-m", argv[i])) { settings.method = argv[++i]; continue; }
+        if (!strcmp("-o", argv[i])) { settings.png_path = argv[++i]; continue; }
+        if (!strcmp("-w", argv[i])) { if (!getUint(argv[++i], settings.window_size)) { return false; } continue; }
+        // else
+        settings.source_path = argv[i];
+        break;
     }
-    if (!strcmp("-f", argv[i])) {
-      if (!getUint(argv[++i], settings.hop_size)) {
-        return false;
-      }
-      continue;
-    }
-    if (!strcmp("-i", argv[i])) {
-      if (!getFloat(argv[++i], settings.minioi_ms)) {
-        return false;
-      }
-      continue;
-    }
-    if (!strcmp("-s", argv[i])) {
-      if (!getFloat(argv[++i], settings.silence)) {
-        return false;
-      }
-      continue;
-    }
-    if (!strcmp("-t", argv[i])) {
-      if (!getFloat(argv[++i], settings.threshold)) {
-        return false;
-      }
-      continue;
-    }
-    if (!strcmp("-c", argv[i])) {
-      if (!getFloat(argv[++i], settings.compression)) {
-        return false;
-      }
-      continue;
-    }
-    if (!strcmp("-m", argv[i])) {
-      settings.method = argv[++i];
-      continue;
-    }
-    if (!strcmp("-o", argv[i])) {
-      settings.png_path = argv[++i];
-      continue;
-    }
-    if (!strcmp("-w", argv[i])) {
-      if (!getUint(argv[++i], settings.window_size)) {
-        return false;
-      }
-      continue;
-    }
-    // else
-    settings.source_path = argv[i];
-    break;
-  }
   /* clang-format on */
-  if (i >= argc ) { return false; }
+  if (i >= argc) {
+    return false;
+  }
 
   if (!settings.png_path) {
     settings.png_path = default_outputname;
@@ -251,4 +214,3 @@ bool Source<M, I>::getNextSource(Source &s,
 
   return true;
 }
-

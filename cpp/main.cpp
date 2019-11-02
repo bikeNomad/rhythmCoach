@@ -9,16 +9,17 @@ static char const *progname = nullptr;
 static void usage() {
   std::cerr
       << "usage:\n"
-      << progname
-      << "[file1options] file1 [file2options] file2\noptions:\n"
+      << progname << "[file1options] file1 [file2options] file2\noptions:\n"
       << "\t[-f hopsize]    hop (frame) size (default=256)\n"
       << "\t[-i minioi_ms]  minimum inter-onset interval in ms (default=12)\n"
       << "\t[-s silence]    silence threshold in dB (default=-90)\n"
       << "\t[-t threshold]  detection threshold (0-1) (default=0.3)\n"
       << "\t[-c compression]  log compression lambda (default=off)\n"
-      << "\t[-m method]     detection method (default|hfc|energy|complex|complexdomain"
-          "|phase|wphase|mkl|kl|specflux|specdiff)\n"
-      << "\t[-o filename]   output filename for PNG (default=comb_filter[12].png)\n"
+      << "\t[-m method]     detection method "
+         "(default|hfc|energy|complex|complexdomain"
+         "|phase|wphase|mkl|kl|specflux|specdiff)\n"
+      << "\t[-o filename]   output filename for PNG "
+         "(default=comb_filter[12].png)\n"
       << "\t[-w winsize]    FFT window size (default=1024)\n";
 }
 
