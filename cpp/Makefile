@@ -2,7 +2,7 @@ BUILD_DIR=Default
 PGM=$(BUILD_DIR)/rhythmCoach
 AUDIO_DIR=../audio
 OUTPUT_PNG=combFilter.png
-SOURCES=aubio_cpp.h comb_filter.h delay_line.h main.cpp
+SOURCES=aubio_cpp.h comb_filter.h delay_line.h main.cpp source.h
 
 all: $(PGM)
 
