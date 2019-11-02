@@ -15,9 +15,11 @@ struct DetectorSettings {
   smpl_t compression; // -c
   char const *method;  // -m
   char const *source_path;
+  char const *png_path;
 };
 
-constexpr DetectorSettings defaultSettings = { 256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr };
+constexpr DetectorSettings defaultSettings
+  = { 256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr, nullptr };
 
 template<unsigned MaxFramesDelay, unsigned ImageWidth>
 class Source {
@@ -27,12 +29,14 @@ public:
     unsigned num_onsets;
   };
 
-  Source() : detector(nullptr), png_name(nullptr), input_name(nullptr), frames_since_last_onset(0),
+  Source() : detector(nullptr),
+      history(new HistoryItem[ImageWidth]),
+      png_name(nullptr), input_name(nullptr), frames_since_last_onset(0),
       had_onset(false), latest_onset(0.0), processed_frames(0), skip(0) {
   }
 
   ~Source() {
-
+    delete[] history;
   }
 
   void initialize() {
@@ -61,7 +65,7 @@ public:
 protected:
   filter_type comb_filter;
   AubioOnsetDetector *detector;
-  HistoryItem history[ImageWidth];
+  HistoryItem *history;
   char const *png_name;
   char const *input_name;
 
@@ -88,22 +92,31 @@ static void printSettings(DetectorSettings const &settings) {
   std::cerr << "settings: " << " -f " << settings.hop_size << " -i "
             << settings.minioi_ms << " -s " << settings.silence << " -t "
             << settings.threshold << " -c " << settings.compression << " -m "
-            << settings.method << " " << settings.source_path << "\n";
+            << settings.method << " " << settings.source_path << " "
+            << settings.png_path
+            << "\n";
 }
 
 template<unsigned MaxFramesDelay, unsigned ImageWidth>
 bool Source<MaxFramesDelay, ImageWidth>::processNextFrame() {
-  uint8_t num_onsets(0);
+  if (!detector->process_samples()) {
+    return false;
+  }
 
   if ((had_onset = detector->is_onset())) {
     latest_onset =  detector->last_ms();
-    num_onsets = 1;
+    frames_since_last_onset = 0;
+  } else {
+    frames_since_last_onset++;
   }
+
   // add to delay line and update comb filter
-  comb_filter.add_item(num_onsets);
+  comb_filter.add_item(had_onset);
   if (processed_frames % skip == 0) {
     unsigned index = processed_frames / skip;
-    addToHistory(index);
+    if (index < ImageWidth) {
+      addToHistory(index);
+    }
   }
   processed_frames++;
   return true;
@@ -115,15 +128,17 @@ void Source<MaxFramesDelay, ImageWidth>::writeImage() {
   image_type image(ImageWidth, MaxFramesDelay);
 
   for (unsigned x = 0; x < ImageWidth; x++) {
-    auto column_history = history[x];
+    HistoryItem & column_history(history[x]);
     for (int i = 0; i < 5; i++) {
       column_history.filter_output[i] = 0;
     }
     auto maxelem = std::max_element(column_history.filter_output.cbegin(),
                                     column_history.filter_output.cend());
+    assert(maxelem);
     float scale = static_cast<float>(*maxelem) / column_history.num_onsets;
     unsigned maxpos = maxelem - column_history.filter_output.cbegin();
-    for (unsigned y = 0; y < MaxDelay; y++) {
+    assert(maxpos < MaxFramesDelay);
+    for (unsigned y = 0; y < MaxFramesDelay; y++) {
       float normalized = static_cast<float>(column_history.filter_output[y])
           / column_history.num_onsets / scale;
       uint8_t val = std::round(normalized * 255);
@@ -132,7 +147,9 @@ void Source<MaxFramesDelay, ImageWidth>::writeImage() {
     }
     image.set_pixel(x, maxpos, png::rgb_pixel(255, 0, 0));  // mark the maximum with red
     image.set_pixel(x, maxpos / 2, png::rgb_pixel(0, 255, 0));
-    image.set_pixel(x, maxpos * 2, png::rgb_pixel(0, 0, 255));
+    if (maxpos * 2 < MaxFramesDelay) {
+      image.set_pixel(x, maxpos * 2, png::rgb_pixel(0, 0, 255));
+    }
   }
   image.write(png_name);
 }
@@ -149,6 +166,9 @@ bool Source<M, I>::applySettings(DetectorSettings const &settings) {
   if (settings.compression != 0.0) {
     detector->set_compression(settings.compression);
   }
+  input_name = settings.source_path;
+  png_name = settings.png_path;
+  skip = totalFrames() / I;
   printSettings(settings);
   return true;
 }
@@ -203,7 +223,7 @@ bool Source<M, I>::getNextSource(Source &s,
       continue;
     }
     if (!strcmp("-o", argv[i])) {
-      s.png_name = argv[++i];
+      settings.png_path = argv[++i];
       continue;
     }
     // else
@@ -213,8 +233,8 @@ bool Source<M, I>::getNextSource(Source &s,
   /* clang-format on */
   if (i >= argc ) { return false; }
 
-  if (!settings.source_path) {
-    settings.source_path = default_outputname;
+  if (!settings.png_path) {
+    settings.png_path = default_outputname;
   }
 
   lastarg = i + 1;

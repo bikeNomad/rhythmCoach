@@ -5,7 +5,6 @@
 #include "rhythm_coach.h"
 
 static char const *progname = nullptr;
-static char const *pngname = "comb_filter.png";
 
 static void usage() {
   std::cerr
@@ -22,15 +21,15 @@ static void usage() {
          "|phase|wphase|mkl|kl|specflux|specdiff)\n";
 }
 
-std::vector<source_type> sources;
+std::vector<source_type *> sources;
 
 static void processCommandLine(int argc, char const *argv[]) {
   int lastarg = 1;
   for (unsigned source_num = 0; source_num < 2; source_num++) {
-    source_type &source = *new source_type();
+    source_type *source = new source_type();
     const char *default_output_name =
         (source_num == 0) ? "comb_filter1.png" : "comb_filter2.png";
-    if (source_type::getNextSource(source, lastarg, argc, argv,
+    if (source_type::getNextSource(*source, lastarg, argc, argv,
                                    default_output_name)) {
       sources.push_back(source);
     } else {
@@ -51,8 +50,8 @@ static uint_t processFiles() {
 
   while (!done) {
     for (auto source : sources) {
-      if (source.processNextFrame()) {
-        total_onsets += source.hadOnset() ? 1 : 0;
+      if (source->processNextFrame()) {
+        total_onsets += source->hadOnset() ? 1 : 0;
       } else {
         retval = total_onsets;
         done = true;
@@ -61,7 +60,8 @@ static uint_t processFiles() {
   }
 
   for (auto source : sources) {
-    source.writeImage();
+    source->writeImage();
+    delete source;
   }
 
   return retval;

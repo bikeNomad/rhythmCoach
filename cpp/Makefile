@@ -13,14 +13,14 @@ clean:
 	@$(MAKE) -C $(BUILD_DIR) clean
 
 test: $(PGM)
-	$(PGM) $(AUDIO_DIR)/excerpt-bass-1.wav $(AUDIO_DIR)/excerpt-kick-1.wav
-	mv $(OUTPUT_PNG) test.png
-	open test.png
+	$(PGM) -o excerpt-bass-1.png $(AUDIO_DIR)/excerpt-bass-1.wav \
+		-o excerpt-kick-1.png $(AUDIO_DIR)/excerpt-kick-1.wav
+	open excerpt-*-1.png
 
 test2: $(PGM)
-	$(PGM) $(AUDIO_DIR)/garageband-bass.wav $(AUDIO_DIR)/garageband-drum.wav
-	mv $(OUTPUT_PNG) test2.png
-	open test2.png
+	$(PGM) -o garageband-bass.png $(AUDIO_DIR)/garageband-bass.wav \
+		-o garageband-drum.png $(AUDIO_DIR)/garageband-drum.wav
+	open garageband-*.png
 
 gdb: $(PGM)
 	gdb $(PGM)

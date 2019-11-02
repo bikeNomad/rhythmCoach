@@ -16,6 +16,7 @@
 #include <fstream>
 #include <png++/png.hpp>
 #include <vector>
+#include <cassert>
 
 // 21.3 ms minioi = 4 frames of 256 samples at 48ksps
 constexpr float defaultMinIOI = 21.3;
