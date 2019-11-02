@@ -17,8 +17,8 @@ static void usage() {
       << "\t[-t threshold]  detection threshold (0-1) (default=0.3)\n"
       << "\t[-c compression]  log compression lambda (default=off)\n"
       << "\t[-m method]     detection method (default|hfc|energy|complex|complexdomain"
-      << "\t[-o filename]   output filename for PNG (default=comb_filter.png)"
-         "|phase|wphase|mkl|kl|specflux|specdiff)\n";
+          "|phase|wphase|mkl|kl|specflux|specdiff)\n"
+      << "\t[-o filename]   output filename for PNG (default=comb_filter[12].png)\n";
 }
 
 std::vector<source_type *> sources;
