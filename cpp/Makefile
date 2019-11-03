@@ -31,4 +31,7 @@ test3: $(PGM)
 gdb: $(PGM)
 	gdb $(PGM)
 
+format: $(SOURCES)
+	clang-format -i -style=file $(SOURCES)
+
 .PHONY: all clean test rhythmCoach test2 gdb

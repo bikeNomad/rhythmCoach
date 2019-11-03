@@ -53,6 +53,8 @@ class Source {
 
   unsigned totalFrames() const { return detector->total_hops(); }
 
+  std::array<float, MaxFramesDelay> smoothed(unsigned window) const { return comb_filter.smoothed(window); }
+
   static bool getNextSource(Source &s, int &lastarg, int argc,
                             char const *argv[], const char *default_outputname);
 
