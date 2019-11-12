@@ -19,6 +19,8 @@ struct DetectorSettings {
   uint_t window_size;
 };
 
+constexpr unsigned smoothingWindow = 11;
+
 constexpr DetectorSettings defaultSettings = {
     256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr, nullptr, 1024};
 
@@ -27,6 +29,7 @@ class Source {
  public:
   struct HistoryItem {
     filter_type::accumulator_type filter_output;
+    filter_type::smoothed_type smoothed;
     unsigned num_onsets;
   };
 
@@ -53,8 +56,6 @@ class Source {
 
   unsigned totalFrames() const { return detector->total_hops(); }
 
-  std::array<float, MaxFramesDelay> smoothed(unsigned window) const { return comb_filter.smoothed(window); }
-
   static bool getNextSource(Source &s, int &lastarg, int argc,
                             char const *argv[], const char *default_outputname);
 
@@ -64,6 +65,7 @@ class Source {
     history[index].num_onsets = comb_filter.num_items();
     history[index].filter_output =
         comb_filter.accumulator();  // copy accumulator
+    comb_filter.smooth(history[index].smoothed, smoothingWindow);
   }
 
  protected:
@@ -136,14 +138,14 @@ void Source<MaxFramesDelay, ImageWidth>::writeImage() {
     for (int i = 0; i < 5; i++) {
       column_history.filter_output[i] = 0;
     }
-    auto maxelem = std::max_element(column_history.filter_output.cbegin(),
-                                    column_history.filter_output.cend());
+    auto maxelem = std::max_element(column_history.smoothed.cbegin(),
+                                    column_history.smoothed.cend());
     assert(maxelem);
     float scale = static_cast<float>(*maxelem) / column_history.num_onsets;
-    unsigned maxpos = maxelem - column_history.filter_output.cbegin();
+    unsigned maxpos = maxelem - column_history.smoothed.cbegin();
     assert(maxpos < MaxFramesDelay);
     for (unsigned y = 0; y < MaxFramesDelay; y++) {
-      float normalized = static_cast<float>(column_history.filter_output[y]) /
+      float normalized = static_cast<float>(column_history.smoothed[y]) /
                          column_history.num_onsets / scale;
       uint8_t val = std::round(normalized * 255);
       png::rgb_pixel pixel(val, val, val);
