@@ -15,20 +15,18 @@ struct DetectorSettings {
   smpl_t compression;  // -c
   char const *method;  // -m
   char const *source_path;
-  char const *png_path;
+  char const *png_path;  // -o
   uint_t window_size;
+  uint_t smoothing_window;  // -x
 };
 
-constexpr unsigned smoothingWindow = 11;
-
 constexpr DetectorSettings defaultSettings = {
-    256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr, nullptr, 1024};
+    256, defaultMinIOI, -90.0, 0.3, 0.0, "default", nullptr, nullptr, 1024, 11};
 
 template <unsigned MaxFramesDelay, unsigned ImageWidth>
 class Source {
  public:
   struct HistoryItem {
-    filter_type::accumulator_type filter_output;
     filter_type::smoothed_type smoothed;
     unsigned num_onsets;
   };
@@ -63,9 +61,7 @@ class Source {
 
   void addToHistory(unsigned index) {
     history[index].num_onsets = comb_filter.num_items();
-    history[index].filter_output =
-        comb_filter.accumulator();  // copy accumulator
-    comb_filter.smooth(history[index].smoothed, smoothingWindow);
+    comb_filter.smooth(history[index].smoothed, smoothing_window);
   }
 
  protected:
@@ -80,6 +76,7 @@ class Source {
   float latest_onset;
   unsigned processed_frames;
   unsigned skip;
+  unsigned smoothing_window;
 };
 
 static bool getFloat(char const *arg, float &dest) {
@@ -95,12 +92,20 @@ static bool getUint(char const *arg, uint_t &dest) {
 }
 
 static void printSettings(DetectorSettings const &settings) {
-  std::cerr << "settings: "
-            << " -f " << settings.hop_size << " -i " << settings.minioi_ms
-            << " -s " << settings.silence << " -t " << settings.threshold
-            << " -c " << settings.compression << " -m " << settings.method
-            << " " << settings.source_path << " " << settings.png_path << " "
-            << settings.window_size << "\n";
+  /* clang-format off */
+    std::cerr << "settings: "
+              << " -f " << settings.hop_size
+              << " -i " << settings.minioi_ms
+              << " -s " << settings.silence
+              << " -t " << settings.threshold
+              << " -c " << settings.compression
+              << " -m " << settings.method
+              << " -x " << settings.smoothing_window
+              << " -o " << settings.png_path
+              << " -w " << settings.window_size
+              << " " << settings.source_path
+              << "\n";
+  /* clang-format on */
 }
 
 template <unsigned MaxFramesDelay, unsigned ImageWidth>
@@ -135,18 +140,17 @@ void Source<MaxFramesDelay, ImageWidth>::writeImage() {
 
   for (unsigned x = 0; x < ImageWidth; x++) {
     HistoryItem &column_history(history[x]);
-    for (int i = 0; i < 5; i++) {
-      column_history.filter_output[i] = 0;
+    for (int i = 0; i < 20; i++) {
+      column_history.smoothed[i] = 0;
     }
     auto maxelem = std::max_element(column_history.smoothed.cbegin(),
                                     column_history.smoothed.cend());
     assert(maxelem);
-    float scale = static_cast<float>(*maxelem) / column_history.num_onsets;
     unsigned maxpos = maxelem - column_history.smoothed.cbegin();
     assert(maxpos < MaxFramesDelay);
     for (unsigned y = 0; y < MaxFramesDelay; y++) {
       float normalized = static_cast<float>(column_history.smoothed[y]) /
-                         column_history.num_onsets / scale;
+                         static_cast<float>(*maxelem);
       uint8_t val = std::round(normalized * 255);
       png::rgb_pixel pixel(val, val, val);
       image.set_pixel(x, y, pixel);
@@ -177,6 +181,7 @@ bool Source<M, I>::applySettings(DetectorSettings const &settings) {
   input_name = settings.source_path;
   png_name = settings.png_path;
   skip = totalFrames() / I;
+  smoothing_window = settings.smoothing_window;
   printSettings(settings);
   return true;
 }
@@ -191,15 +196,17 @@ bool Source<M, I>::getNextSource(Source &s, int &lastarg, int argc,
   /* clang-format off */
     for (i = lastarg; i < argc; i++)
     {
-        if (!strcmp("-h", argv[i])) { return false; }
-        if (!strcmp("-f", argv[i])) { if (!getUint(argv[++i], settings.hop_size)) { return false; } continue; }
-        if (!strcmp("-i", argv[i])) { if (!getFloat(argv[++i], settings.minioi_ms)) { return false; } continue; }
-        if (!strcmp("-s", argv[i])) { if (!getFloat(argv[++i], settings.silence)) { return false; } continue; }
-        if (!strcmp("-t", argv[i])) { if (!getFloat(argv[++i], settings.threshold)) { return false; } continue; }
-        if (!strcmp("-c", argv[i])) { if (!getFloat(argv[++i], settings.compression)) { return false; } continue; }
+        if (!strcmp("-h", argv[i])) return false;
+
+        if (!strcmp("-f", argv[i])) { if (!getUint(argv[++i], settings.hop_size)) return false; continue; }
+        if (!strcmp("-x", argv[i])) { if (!getUint(argv[++i], settings.smoothing_window)) return false; continue; }
+        if (!strcmp("-i", argv[i])) { if (!getFloat(argv[++i], settings.minioi_ms)) return false; continue; }
+        if (!strcmp("-s", argv[i])) { if (!getFloat(argv[++i], settings.silence)) return false; continue; }
+        if (!strcmp("-t", argv[i])) { if (!getFloat(argv[++i], settings.threshold)) return false; continue; }
+        if (!strcmp("-c", argv[i])) { if (!getFloat(argv[++i], settings.compression)) return false; continue; }
         if (!strcmp("-m", argv[i])) { settings.method = argv[++i]; continue; }
         if (!strcmp("-o", argv[i])) { settings.png_path = argv[++i]; continue; }
-        if (!strcmp("-w", argv[i])) { if (!getUint(argv[++i], settings.window_size)) { return false; } continue; }
+        if (!strcmp("-w", argv[i])) { if (!getUint(argv[++i], settings.window_size)) return false; continue; }
         // else
         settings.source_path = argv[i];
         break;
